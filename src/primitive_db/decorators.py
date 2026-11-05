@@ -1,4 +1,4 @@
-from functools import cache, wraps
+from functools import wraps
 import time
 
 def handle_db_errors(func):

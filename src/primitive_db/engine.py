@@ -9,16 +9,24 @@ from primitive_db.decorators import create_cacher
 DB_FILE = "db_meta.json"
 
 def print_help():
-    print("\n***Операции с данными***\n")
+    """Выводит справочную информацию по всем доступным командам."""
+    print("\n***Процесс работы с таблицей***")
+    print("Функции:")
+    print("<command> create_table <имя_таблицы> <столбец1:тип> <столбец2:тип> .. - создать таблицу")
+    print("<command> list_tables - показать список всех таблиц")
+    print("<command> drop_table <имя_таблицы> - удалить таблицу")
+    
+    print("\n***Операции с данными***")
     print("Функции:")
     print("<command> insert into <имя_таблицы> values (<значение1>, <значение2>, ...) - создать запись.")
-    print("<command> select from <имя_таблицы> where <столбец> = <значение> - прочитать записи по условию.")
-    print("<command> select from <имя_таблицы> - прочитать все записи.")
-    print("<command> update <имя_таблицы> set <столбец1> = <новое_значение1> where <столбец_условия> = <значение_условия> - обновить запись.")
+    print("<command> select from <имя_таблицы> [where <столбец> = <значение>] - прочитать записи.")
+    print("<command> update <имя_таблицы> set <столбец> = <знач> where <столбец> = <знач> - обновить запись.")
     print("<command> delete from <имя_таблицы> where <столбец> = <значение> - удалить запись.")
     print("<command> info <имя_таблицы> - вывести информацию о таблице.")
+    
+    print("\n***Общие команды***")
     print("<command> exit - выход из программы")
-    print("<command> help- справочная информация\n")
+    print("<command> help - справочная информация\n")
 
 def run():
     print("***База данных***")
