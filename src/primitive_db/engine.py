@@ -1,8 +1,10 @@
 import shlex
+import prompt
 from prettytable import PrettyTable
 from primitive_db.core import create_table, drop_table, list_tables, insert, select, update, delete, info
 from primitive_db.utils import load_metadata, save_metadata, load_table_data, save_table_data
 from primitive_db.parser import parse_where, parse_update, parse_insert_values
+from primitive_db.decorators import create_cacher
 
 DB_FILE = "db_meta.json"
 
@@ -20,12 +22,14 @@ def print_help():
 
 def run():
     print("***База данных***")
+
+    select_cacher = create_cacher()
     
     while True:
         metadata = load_metadata(DB_FILE)
         
         try:
-            user_input = input(">>> Введите команду: ").strip()
+            user_input = prompt.string(">>> Введите команду: ").strip()
         except (EOFError, KeyboardInterrupt):
             print()
             break
@@ -62,7 +66,10 @@ def run():
                     print("Некорректное значение: имя_таблицы.")
                 else:
                     table_name = args[1]
-                    metadata, success = drop_table(metadata, table_name)
+                    result = drop_table(metadata, table_name)
+                    if result is None:
+                        continue
+                    metadata, success = result
                     if success: save_metadata(DB_FILE, metadata)
                     
             case "insert":
@@ -80,7 +87,10 @@ def run():
                     continue
                     
                 table_data = load_table_data(table_name)
-                new_data, success, msg = insert(metadata, table_name, table_data, values)
+                result = insert(metadata, table_name, table_data, values)
+                if result is None:
+                    continue
+                new_data, success, msg = result
                 print(msg)
                 if success:
                     save_table_data(table_name, new_data)
@@ -102,7 +112,11 @@ def run():
                         continue
                         
                 table_data = load_table_data(table_name)
-                results = select(table_data, where_clause)
+                query_key = f"{table_name}_{str(where_clause)}"
+                results = select_cacher(
+                    query_key, 
+                    lambda: select(table_data, where_clause)
+                )
                 
                 if results:
                     pt = PrettyTable()
@@ -154,7 +168,10 @@ def run():
                     continue
                     
                 table_data = load_table_data(table_name)
-                new_data, success, msg = delete(table_data, table_name, where_clause)
+                result = delete(table_data, table_name, where_clause)
+                if result is None:
+                    continue
+                new_data, success, msg = result
                 print(msg)
                 if success:
                     save_table_data(table_name, new_data)

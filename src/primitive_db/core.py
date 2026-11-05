@@ -1,4 +1,5 @@
 from primitive_db.parser import cast_value
+from primitive_db.decorators import handle_db_errors, confirm_action, log_time
 
 SUPPORTED_TYPES = {"int", "str", "bool"}
 
@@ -30,7 +31,8 @@ def create_table(metadata, table_name, columns_raw):
     
     return metadata, True
 
-
+@handle_db_errors
+@confirm_action("удаление таблицы")
 def drop_table(metadata, table_name):
     """Удаляет таблицу из метаданных."""
     if table_name not in metadata:
@@ -50,6 +52,8 @@ def list_tables(metadata):
     for table_name in metadata.keys():
         print(f"- {table_name}")
 
+@handle_db_errors
+@log_time
 def insert(metadata, table_name, table_data, values):
     columns = list(metadata[table_name].items())
     if len(values) != len(columns) - 1:
@@ -57,18 +61,17 @@ def insert(metadata, table_name, table_data, values):
     
     new_id = max([row.get("ID", 0) for row in table_data], default=0) + 1
     new_record = {"ID": new_id}
-    
-    try:
-        for i, val_str in enumerate(values):
-            col_name = columns[i+1][0]
-            col_type = columns[i+1][1]
-            new_record[col_name] = cast_value(val_str, col_type)
-    except ValueError as e:
-        return table_data, False, f"Ошибка типа: {e}"
+
+    for i, val_str in enumerate(values):
+        col_name = columns[i+1][0]
+        col_type = columns[i+1][1]
+        new_record[col_name] = cast_value(val_str, col_type)
         
     table_data.append(new_record)
     return table_data, True, f'Запись с ID={new_id} успешно добавлена в таблицу "{table_name}".'
 
+@handle_db_errors
+@log_time
 def select(table_data, where_clause=None):
     if not where_clause:
         return table_data
@@ -87,6 +90,8 @@ def update(table_data, table_name, set_clause, where_clause):
         return table_data, True, f'Запись с ID={ids_str} в таблице "{table_name}" успешно обновлена.'
     return table_data, False, "Записи по условию не найдены."
 
+@handle_db_errors
+@confirm_action("удаление записей")
 def delete(table_data, table_name, where_clause):
     to_delete = []
     for row in table_data:
